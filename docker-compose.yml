@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # 1. Contenedor de la Base de Datos
+  db:
+    image: mysql:8.0
+    container_name: citas_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: citas_medicas
+      MYSQL_ROOT_PASSWORD: root_password # Cambia esto por algo seguro en tu .env
+      MYSQL_PASSWORD: secret
+      MYSQL_USER: user_citas
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  # 2. Contenedor de la Aplicación (PHP)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: citas_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - db
+
+  # 3. Contenedor del Servidor Web (Nginx)
+  web:
+    image: nginx:alpine
+    container_name: citas_web
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+
+volumes:
+  db_data:
